@@ -7,6 +7,7 @@ fd = open('./data/cricket.csv')
 data = [row.split(',') for row in fd.read().split('\n')]
 data.pop()
 header,data = data[0],data[1:]
+random.shuffle(data)
 fd.close()
 
 selected_points = []
@@ -34,7 +35,7 @@ def sign(a):
 #training phase
 def train():
     global W
-    for i in range(N):
+    for i in range(20):
         x = [1]+list(data[i][1:3])
         y = data[i][3]
         if sign(W[0]*x[0] + W[1]*x[1] + W[2]*x[2]) != y:
@@ -43,7 +44,7 @@ def train():
 
 def test():
     global miss
-    for i in range(N):
+    for i in range(20,30):
         x = [1]+list(data[i][1:3])
         y = data[i][3]
         if sign(W[0]*x[0] + W[1]*x[1] + W[2]*x[2]) != y: miss+=1
@@ -55,7 +56,7 @@ x1 = (80, m*10+c)
 x2 = (0, m*-10+c)
 
 test()
-accuracy = (N-miss)*100/N
+accuracy = (10-miss)*100/10
 print('accuracy: ',accuracy,'%')
 
 selected_points = zip(*selected_points)
