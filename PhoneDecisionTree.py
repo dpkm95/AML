@@ -115,9 +115,9 @@ def create_decision_tree(data, attr, unique_attr, target_distro = None):
 		distro = get_distribution(cat_data[cdata], unique_attr)
 		if get_entropy(distro[chozen_attr][cdata]) == 0:
 			if distro[chozen_attr][cdata][0] != 0:
-				tree[(chozen_attr,cdata)] = '1'
+				tree[cdata] = '1'
 			elif distro[chozen_attr][cdata][1] != 0:
-				tree[(chozen_attr,cdata)] = '2'
+				tree[cdata] = '2'
 			else: tree[cdata] = '3'
 		else:
 			dup_unique_attr = copy.deepcopy(unique_attr)
