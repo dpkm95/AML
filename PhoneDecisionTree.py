@@ -6,8 +6,8 @@ from math import log
 data = None
 header = None
 unique_attr = None
-Noutcomes = None
-tree = {}
+N = None #No of outcomes
+decision_tree = {} #decision-tree
 
 def get_raw_data(file_path):
 	global data, header
@@ -73,7 +73,7 @@ def get_distribution(data, unique_attr):
 	for attr in unique_attr.keys():
 		res[attr] = {}
 		for i in range(unique_attr[attr]):
-			res[attr][i+1] = [0]*Noutcomes
+			res[attr][i+1] = [0]*N
 		for row in data:
 			res[attr][row[attr]][row['Price']-1] += 1
 	return res
@@ -132,12 +132,67 @@ def create_decision_tree(data, attr, unique_attr, target_distro = None):
 			)
 	return (chozen_attr, tree)
 
+def categorize_memory(test):
+	if float(test['Memory']) <=8: return 1
+	elif float(test['Memory']) <=16: return 2
+	else: return 3
+
+def categorize_size(test):
+	if float(test['Size']) < 5: return 1
+	elif float(test['Size']) < 5.3: return 2
+	else: return 3
+
+def categorize_camera(test):
+	if float(test['Size']) <=8: return 1
+	elif float(test['Size']) <=13: return 2
+	else: return 3
+
+def categorize_cores(test):
+	if float(test['Size']) == 2: return 1
+	elif float(test['Size']) == 4: return 2
+	else: return 3
+
+def categorize_brand(test):
+	if test['Brand'] == 'Apple': return 1
+	elif test['Brand'] == 'Samsung': return 2
+	elif test['Brand'] == 'Micromax': return 3
+	elif test['Brand'] == 'Motorola': return 4
+	elif test['Brand'] == 'Google': return 5
+
 get_raw_data('./data/phones.csv')
 unique_attr = {'Memory':3,'Size':3,'Camera':3,'Cores':3,'Brand':5} #keeps track of the discrete values each attribute can take
 
 data = make_dict_list(header, data)
 data = get_clean_attributes(data)
-Noutcomes = 3
+N = 3
 
 decision_tree = create_decision_tree(data,'Price', copy.deepcopy(unique_attr), target_distro = (4, 4, 3))
-print(decision_tree)
+
+tests = {
+	'Memory':categorize_memory,
+	'Size':categorize_size,
+	'Camera':categorize_camera,
+	'Cores':categorize_cores,
+	'Brand':categorize_brand
+}
+
+# print('Please enter the specs of new Phone:')
+# test = {}
+# test['Brand'] = input('Brand: ')
+# test['Cores'] = input('Cores: ')
+# test['Memory'] = input('Memory: ')
+# test['Camera'] = input('Camera: ')
+# test['Size'] = input('Size: ')
+test_case = {'Memory':16,'Size':4.7,'Camera':10,'Cores':2,'Brand':'Motorola'}
+
+def get_price_code(decision_tree, tests, test_case):
+	tree = decision_tree
+	while True:
+		if not tree[0] in unique_attr.keys():
+			return tree
+		print(tree)
+		cat = tests[tree[0]](test_case)
+		tree = tree[1][cat]
+
+price_code = get_price_code(decision_tree, tests, test_case)
+print(price_code)

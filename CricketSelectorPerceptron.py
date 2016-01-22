@@ -65,5 +65,3 @@ plt.plot([x1[0],x2[0]],[x1[1],x2[1]])
 plt.plot(selected_points[0], selected_points[1], linestyle=' ', marker='o', color='g')
 plt.plot(rejected_points[0], rejected_points[1], linestyle=' ', marker='o', color='r')
 plt.show()
-
-
