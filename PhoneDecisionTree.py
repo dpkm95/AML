@@ -9,74 +9,27 @@ unique_attr = None
 N = None #No of outcomes
 decision_tree = {} #decision-tree
 
-def categorize_memory(test):
-	if float(test['Memory']) <=8: return 1
-	elif float(test['Memory']) <=16: return 2
-	else: return 3
-
-def categorize_size(test):
-	if float(test['Size']) < 5: return 1
-	elif float(test['Size']) < 5.3: return 2
-	else: return 3
-
-def categorize_camera(test):
-	if float(test['Size']) <=8: return 1
-	elif float(test['Size']) <=13: return 2
-	else: return 3
-
-def categorize_cores(test):
-	if float(test['Size']) == 2: return 1
-	elif float(test['Size']) == 4: return 2
-	else: return 3
-
-def categorize_brand(test):
-	if test['Brand'] == 'Apple': return 1
-	elif test['Brand'] == 'Samsung': return 2
-	elif test['Brand'] == 'Micromax': return 3
-	elif test['Brand'] == 'Motorola': return 4
-	elif test['Brand'] == 'Google': return 5
-
-tests = {
-	'Memory':categorize_memory,
-	'Size':categorize_size,
-	'Camera':categorize_camera,
-	'Cores':categorize_cores,
-	'Brand':categorize_brand
+descretizer = {
+	'Memory': lambda x: 1 if float(x['Memory']) <=8 else 2 if float(x['Memory']) <=16 else 3,
+	'Size': lambda x: 1 if float(x['Size']) <5 else 2 if float(x['Size']) <5.3 else 3,
+	'Camera': lambda x: 1 if float(x['Camera']) <=8 else 2 if float(x['Camera']) <=13 else 3,
+	'Cores': lambda x: 1 if float(x['Cores']) ==2 else 2 if float(x['Cores']) ==4 else 3,
+	'Brand': lambda x: ['Apple','Samsung','Micromax','Motorola','Google'].index(x['Brand'])+1,
+	'Price': lambda x: 1 if float(x['Price']) <20000 else 2 if float(x['Price']) <40000 else 3
 }
 
 #discretize attributes & remove unnecessary cols
 def get_clean_attributes(raw_data):
 	data = copy.deepcopy(raw_data)
 	for row in data:
-		if float(row['Memory']) <=8: row['Memory'] = 1
-		elif float(row['Memory']) <=16: row['Memory'] = 2
-		else: row['Memory'] = 3
-
-		if float(row['Size']) < 5: row['Size'] = 1
-		elif float(row['Size']) < 5.3: row['Size'] = 2
-		else: row['Size'] = 3
-
-		if float(row['Camera']) <=8: row['Camera'] = 1
-		elif float(row['Camera']) <=13: row['Camera'] = 2
-		else: row['Camera'] = 3
-
-		if float(row['Cores']) == 2: row['Cores'] = 1
-		elif float(row['Cores']) == 4: row['Cores'] = 2
-		elif float(row['Cores']) == 8: row['Cores'] = 3
-
-		if row['Brand'] == 'Apple': row['Brand'] = 1
-		elif row['Brand'] == 'Samsung': row['Brand'] = 2
-		elif row['Brand'] == 'Micromax': row['Brand'] = 3
-		elif row['Brand'] == 'Motorola': row['Brand'] = 4
-		elif row['Brand'] == 'Google': row['Brand'] = 5
-
-		if float(row['Price']) < 20000: row['Price'] = 1
-		elif float(row['Price']) < 40000: row['Price'] = 2
-		else: row['Price'] = 3
-
-		row['SNo'] = int(row['SNo'])
 		del row['SNo']
 		del row['Product']
+		row['Memory'] = descretizer['Memory'](row)
+		row['Size'] = descretizer['Size'](row)
+		row['Camera'] = descretizer['Camera'](row)
+		row['Cores'] = descretizer['Cores'](row)
+		row['Brand'] = descretizer['Brand'](row)
+		row['Price'] = descretizer['Price'](row)
 	return data
 
 def get_raw_data(file_path):
@@ -167,7 +120,7 @@ def create_decision_tree(data, attr, unique_attr, target_distro = None):
 					target_distro = distro[chozen_attr][cdata]
 				)
 			)
-	return (tests[chozen_attr], tree)
+	return (descretizer[chozen_attr], tree)
 
 def get_input():
 	# print('Please enter the specs of new Phone:')
@@ -177,7 +130,7 @@ def get_input():
 	# test_case['Memory'] = input('Memory: ')
 	# test_case['Camera'] = input('Camera: ')
 	# test_case['Size'] = input('Size: ')
-	test_case = {'Memory':16,'Size':4.7,'Camera':10,'Cores':2,'Brand':'Motorola'}
+	test_case = {'Memory':'16','Size':'4.7','Camera':'10','Cores':'2','Brand':'Motorola'}
 	return test_case
 
 def get_price_code(decision_tree, test_case):
@@ -185,6 +138,7 @@ def get_price_code(decision_tree, test_case):
 	while True:
 		if type(tree[0]) is not types.FunctionType:
 			return tree
+		print(tree[1])
 		tree = tree[1][tree[0](test_case)]
 
 get_raw_data('./data/phones.csv')
