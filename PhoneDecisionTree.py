@@ -1,5 +1,5 @@
 from __future__ import division
-import random, copy, collections
+import random, copy, collections, types
 from math import log
 
 #global variables
@@ -9,29 +9,40 @@ unique_attr = None
 N = None #No of outcomes
 decision_tree = {} #decision-tree
 
-def get_raw_data(file_path):
-	global data, header
-	fd = open(file_path,'r')
-	data = [row.split(',') for row in fd.read().split('\n')]
-	header, data = data[0],data[1:]
-	fd.close()
+def categorize_memory(test):
+	if float(test['Memory']) <=8: return 1
+	elif float(test['Memory']) <=16: return 2
+	else: return 3
 
-def make_dict_list(header,rows):
-	res = list()
-	for row in rows:
-		d = dict()
-		for i, attr in enumerate(header):
-			d[attr] = row[i]
-		res.append(d)
-	return res
+def categorize_size(test):
+	if float(test['Size']) < 5: return 1
+	elif float(test['Size']) < 5.3: return 2
+	else: return 3
 
-def get_conditional_entropy(h_parent, n_parent, distro):
-	for attr in distro:
-		cprob = 0
-		for cat in distro[attr]:
-			cprob += (distro[attr][cat][0]/n_parent)*distro[attr][cat][1]
-		distro[attr] = h_parent - cprob
-	return distro
+def categorize_camera(test):
+	if float(test['Size']) <=8: return 1
+	elif float(test['Size']) <=13: return 2
+	else: return 3
+
+def categorize_cores(test):
+	if float(test['Size']) == 2: return 1
+	elif float(test['Size']) == 4: return 2
+	else: return 3
+
+def categorize_brand(test):
+	if test['Brand'] == 'Apple': return 1
+	elif test['Brand'] == 'Samsung': return 2
+	elif test['Brand'] == 'Micromax': return 3
+	elif test['Brand'] == 'Motorola': return 4
+	elif test['Brand'] == 'Google': return 5
+
+tests = {
+	'Memory':categorize_memory,
+	'Size':categorize_size,
+	'Camera':categorize_camera,
+	'Cores':categorize_cores,
+	'Brand':categorize_brand
+}
 
 #discretize attributes & remove unnecessary cols
 def get_clean_attributes(raw_data):
@@ -68,6 +79,30 @@ def get_clean_attributes(raw_data):
 		del row['Product']
 	return data
 
+def get_raw_data(file_path):
+	global data, header
+	fd = open(file_path,'r')
+	data = [row.split(',') for row in fd.read().split('\n')]
+	header, data = data[0],data[1:]
+	fd.close()
+
+def make_dict_list(header,rows):
+	res = list()
+	for row in rows:
+		d = dict()
+		for i, attr in enumerate(header):
+			d[attr] = row[i]
+		res.append(d)
+	return res
+
+def get_conditional_entropy(h_parent, n_parent, distro):
+	for attr in distro:
+		cprob = 0
+		for cat in distro[attr]:
+			cprob += (distro[attr][cat][0]/n_parent)*distro[attr][cat][1]
+		distro[attr] = h_parent - cprob
+	return distro
+
 def get_distribution(data, unique_attr):
 	res = {}
 	for attr in unique_attr.keys():
@@ -82,6 +117,8 @@ def choose_attribute(h_parent, n_parent, distro):
 	for attr in distro:
 		for choice in distro[attr]:
 			distro[attr][choice] = (sum(distro[attr][choice]),get_entropy(distro[attr][choice]))
+	print(distro)
+	print("\n")
 	distro = get_conditional_entropy(h_parent, n_parent, distro)
 	attr_entry = collections.OrderedDict(sorted(distro.items(), reverse = True, key = lambda x:x[1])).popitem(0)
 	return attr_entry[0]
@@ -130,34 +167,25 @@ def create_decision_tree(data, attr, unique_attr, target_distro = None):
 					target_distro = distro[chozen_attr][cdata]
 				)
 			)
-	return (chozen_attr, tree)
+	return (tests[chozen_attr], tree)
 
-def categorize_memory(test):
-	if float(test['Memory']) <=8: return 1
-	elif float(test['Memory']) <=16: return 2
-	else: return 3
+def get_input():
+	# print('Please enter the specs of new Phone:')
+	# test_case = {}
+	# test_case['Brand'] = input('Brand: ')
+	# test_case['Cores'] = input('Cores: ')
+	# test_case['Memory'] = input('Memory: ')
+	# test_case['Camera'] = input('Camera: ')
+	# test_case['Size'] = input('Size: ')
+	test_case = {'Memory':16,'Size':4.7,'Camera':10,'Cores':2,'Brand':'Motorola'}
+	return test_case
 
-def categorize_size(test):
-	if float(test['Size']) < 5: return 1
-	elif float(test['Size']) < 5.3: return 2
-	else: return 3
-
-def categorize_camera(test):
-	if float(test['Size']) <=8: return 1
-	elif float(test['Size']) <=13: return 2
-	else: return 3
-
-def categorize_cores(test):
-	if float(test['Size']) == 2: return 1
-	elif float(test['Size']) == 4: return 2
-	else: return 3
-
-def categorize_brand(test):
-	if test['Brand'] == 'Apple': return 1
-	elif test['Brand'] == 'Samsung': return 2
-	elif test['Brand'] == 'Micromax': return 3
-	elif test['Brand'] == 'Motorola': return 4
-	elif test['Brand'] == 'Google': return 5
+def get_price_code(decision_tree, test_case):
+	tree = decision_tree
+	while True:
+		if type(tree[0]) is not types.FunctionType:
+			return tree
+		tree = tree[1][tree[0](test_case)]
 
 get_raw_data('./data/phones.csv')
 unique_attr = {'Memory':3,'Size':3,'Camera':3,'Cores':3,'Brand':5} #keeps track of the discrete values each attribute can take
@@ -168,31 +196,5 @@ N = 3
 
 decision_tree = create_decision_tree(data,'Price', copy.deepcopy(unique_attr), target_distro = (4, 4, 3))
 
-tests = {
-	'Memory':categorize_memory,
-	'Size':categorize_size,
-	'Camera':categorize_camera,
-	'Cores':categorize_cores,
-	'Brand':categorize_brand
-}
-
-# print('Please enter the specs of new Phone:')
-# test = {}
-# test['Brand'] = input('Brand: ')
-# test['Cores'] = input('Cores: ')
-# test['Memory'] = input('Memory: ')
-# test['Camera'] = input('Camera: ')
-# test['Size'] = input('Size: ')
-test_case = {'Memory':16,'Size':4.7,'Camera':10,'Cores':2,'Brand':'Motorola'}
-
-def get_price_code(decision_tree, tests, test_case):
-	tree = decision_tree
-	while True:
-		if not tree[0] in unique_attr.keys():
-			return tree
-		print(tree)
-		cat = tests[tree[0]](test_case)
-		tree = tree[1][cat]
-
-price_code = get_price_code(decision_tree, tests, test_case)
+price_code = get_price_code(decision_tree, get_input())
 print(price_code)
